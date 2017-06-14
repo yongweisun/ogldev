@@ -21,6 +21,9 @@
 #include <fstream>
 #ifdef WIN32
 #include <Windows.h>
+#include <tchar.h>
+#include <stdio.h>
+#include <strsafe.h>
 #else
 #include <sys/time.h>
 #endif
@@ -60,28 +63,66 @@ bool ReadFile(const char* pFileName, string& outFile)
 
 #ifdef WIN32
 
-char* ReadBinaryFile(const char* pFileName, int& size)
-{
-    HANDLE f = CreateFileA(pFileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-    if (f == INVALID_HANDLE_VALUE) {
-        OGLDEV_FILE_ERROR(pFileName);
-        return false;
+//char* ReadBinaryFileWin(const char* pFileName, int& size)
+//{
+//    HANDLE fileHandle = CreateFileA(pFileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+//
+//    if (fileHandle == INVALID_HANDLE_VALUE) {
+//        OGLDEV_FILE_ERROR(pFileName);
+//        return false;
+//    }
+//
+//    size = GetFileSize(fileHandle, NULL);
+//
+//    if (size == INVALID_FILE_SIZE) {
+//        OGLDEV_ERROR("Invalid file size %s\n", pFileName);
+//        return false;
+//    }
+//
+//	char* pBuffer = (char*)malloc(size);
+//    assert(pBuffer);
+//    // wip for tutorial51
+//    //assert(0);
+//    ZeroMemory(pBuffer,size);
+//    DWORD dwBytesToRead = size;
+//    DWORD dwBytesRead = 0;
+//    char* pTmpBuf = pBuffer;
+//
+//    do{                                       
+//
+//		ReadFile(fileHandle,pTmpBuf,dwBytesRead,&dwBytesRead,NULL);
+//		
+//        if (dwBytesRead == 0)
+//            break;
+//
+//        dwBytesToRead -= dwBytesRead;
+//        pTmpBuf += dwBytesRead;
+//
+//        } while (dwBytesToRead > 0);
+//	 //free(p);
+//	CloseHandle(fileHandle);
+//	return pBuffer;
+//}
+char* ReadBinaryFileStd(const char* pFileName, int& size){
+	FILE* pFile=fopen(pFileName,"r");
+	if (pFile == NULL) {
+        OGLDEV_ERROR("Error opening '%s': %s\n", pFileName, strerror(errno));
+        return NULL;        
     }
-
-    size = GetFileSize(f, NULL);
-
-    if (size == INVALID_FILE_SIZE) {
-        OGLDEV_ERROR("Invalid file size %s\n", pFileName);
-        return false;
-    }
-
-    // wip for tutorial51
-    assert(0);
-
-    return true;
+	fseek(pFile, 0, SEEK_END); // seek to end of file
+	size = ftell(pFile); // get current file pointer
+	fseek(pFile, 0, SEEK_SET); // seek back to beginning of file
+	char* pBuffer = (char*)malloc(size);
+    assert(pBuffer);
+	fread(pBuffer,size,1,pFile);
+	fclose(pFile);
+	return pBuffer;
 }
 
+char* ReadBinaryFile(const char* pFileName, int& size){
+	//return ReadBinaryFileWin(pFileName,size);
+	return ReadBinaryFileStd(pFileName,size);
+}
 #else
 char* ReadBinaryFile(const char* pFileName, int& size)
 {
